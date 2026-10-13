@@ -1,0 +1,20 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}{% endblock %}
+{% block nav-sidebar %}{% endblock %}
+{% block content_title %}{% endblock %}
+
+{% block content %}
+  <div class="sessao-encerrada">
+    <div class="sessao-icone" aria-hidden="true">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6 9 17l-5-5"/>
+      </svg>
+    </div>
+    <h1>Sessão encerrada</h1>
+    <p class="sessao-texto">Você saiu do painel de estoque com segurança.</p>
+    <p class="sessao-dica">Para continuar, entre novamente com seu usuário e senha.</p>
+    <a class="sessao-botao" href="{% url 'admin:login' %}">Entrar novamente</a>
+  </div>
+{% endblock %}

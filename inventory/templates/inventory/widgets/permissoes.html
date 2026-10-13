@@ -1,0 +1,23 @@
+<div class="permissoes" id="{{ widget.attrs.id }}">
+  <div class="perfis">
+    <span class="perfis-rotulo">Atalhos:</span>
+    {% for perfil in widget.perfis %}
+      <button type="button" class="perfil" data-ids="{{ perfil.ids }}">{{ perfil.nome }}</button>
+    {% endfor %}
+    <button type="button" class="perfil perfil-limpar" data-ids="">Limpar seleção</button>
+  </div>
+
+  <div class="permissoes-grid">
+    {% for group_name, group_choices, group_index in widget.optgroups %}
+      <fieldset class="grupo-permissoes">
+        <legend>{{ group_name }}</legend>
+        {% for option in group_choices %}
+          <label class="opcao">
+            <input type="checkbox" name="{{ option.name }}" value="{{ option.value }}"{% if option.selected %} checked{% endif %}>
+            <span>{{ option.label }}</span>
+          </label>
+        {% endfor %}
+      </fieldset>
+    {% endfor %}
+  </div>
+</div>

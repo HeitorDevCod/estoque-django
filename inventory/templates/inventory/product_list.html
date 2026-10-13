@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estoque</title>
+  <script>
+    // Usa o mesmo tema escolhido no admin (salvo no navegador).
+    (function () {
+      try {
+        var tema = localStorage.getItem("theme");
+        if (tema) document.documentElement.dataset.theme = tema;
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      --fundo: #f4f6f8;
+      --superficie: #ffffff;
+      --texto: #111827;
+      --texto-2: #4b5563;
+      --texto-3: #6b7280;
+      --borda: #e5e7eb;
+      --borda-forte: #d1d5db;
+      --primaria: #1e3a5f;
+      --primaria-escura: #162e4d;
+      --primaria-clara: #e8eef6;
+      --alerta: #b45309;
+      --alerta-fundo: #fef3c7;
+      --ok: #166534;
+      --ok-fundo: #dcfce7;
+      --link: #1e3a5f;
+    }
+    /* Modo escuro: mesmo fundo do admin */
+    :root[data-theme="dark"],
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --link: #93c5fd; --fundo: #0f172a; --superficie: #1e293b; --texto: #f1f5f9; --texto-2: #cbd5e1;
+        --texto-3: #94a3b8; --borda: #334155; --borda-forte: #475569; --primaria: #2b4f7e;
+        --primaria-escura: #356096; --primaria-clara: #1e3a5f; --alerta: #fbbf24;
+        --alerta-fundo: rgba(251, 191, 36, 0.14); --ok: #86efac; --ok-fundo: rgba(34, 197, 94, 0.16);
+      }
+    }
+    :root[data-theme="dark"] {
+      --link: #93c5fd;
+      --fundo: #0f172a; --superficie: #1e293b; --texto: #f1f5f9; --texto-2: #cbd5e1;
+      --texto-3: #94a3b8; --borda: #334155; --borda-forte: #475569; --primaria: #2b4f7e;
+      --primaria-escura: #356096; --primaria-clara: #1e3a5f; --alerta: #fbbf24;
+      --alerta-fundo: rgba(251, 191, 36, 0.14); --ok: #86efac; --ok-fundo: rgba(34, 197, 94, 0.16);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background: var(--fundo); color: var(--texto);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-size: 15px; line-height: 1.45; -webkit-font-smoothing: antialiased;
+    }
+    .pagina { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+
+    /* Barra superior */
+    .barra { background: var(--primaria); color: #fff; position: sticky; top: 0; z-index: 2; margin-bottom: 28px; }
+    .barra .pagina { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-top: 12px; padding-bottom: 12px; }
+    .logo { font-size: 16px; font-weight: 700; }
+    .nav { display: flex; gap: 22px; align-items: center; font-size: 14px; }
+    .nav a { color: #cbd5e1; text-decoration: none; }
+    .nav a:hover, .nav a.ativa { color: #fff; }
+
+    /* Usuário, em bloco próprio */
+    .usuario {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255, 255, 255, 0.08); border-radius: 999px; padding: 4px 6px 4px 4px;
+    }
+    .avatar {
+      width: 30px; height: 30px; border-radius: 50%; background: #fff; color: var(--primaria);
+      display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+    }
+    .usuario-nome { font-size: 14px; color: #fff; }
+    .usuario-sair { font-size: 13px; color: #cbd5e1; text-decoration: none; padding: 4px 8px; border-radius: 999px; }
+    .usuario-sair:hover { color: #fff; background: rgba(255, 255, 255, 0.12); }
+
+    /* Cabeçalho da página */
+    .cabecalho { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; margin-bottom: 22px; }
+    .relogio {
+      display: inline-flex; align-items: center; gap: 14px; margin-bottom: 10px;
+      background: var(--superficie); border: 1px solid var(--borda); border-radius: 10px; padding: 8px 16px;
+    }
+    .relogio-data { font-size: 14px; color: var(--texto-2); }
+    .relogio-hora {
+      font-size: 20px; font-weight: 700; color: var(--link); font-variant-numeric: tabular-nums;
+      border-left: 1px solid var(--borda); padding-left: 14px;
+    }
+    h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.4px; margin: 0; }
+    .resumo-topo { display: flex; gap: 12px; flex-wrap: wrap; }
+    .indicador { background: var(--superficie); border: 1px solid var(--borda); border-radius: 10px; padding: 12px 16px; min-width: 150px; }
+    .indicador .valor { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .indicador .rotulo { font-size: 12px; color: var(--texto-3); text-transform: uppercase; letter-spacing: 0.5px; }
+    .indicador.alerta .valor { color: var(--alerta); }
+
+    /* Layout */
+    .corpo { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
+    .cartao { background: var(--superficie); border: 1px solid var(--borda); border-radius: 12px; }
+
+    /* Filtros */
+    .ferramentas { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 16px; border-bottom: 1px solid var(--borda); }
+    .ferramentas form { display: flex; gap: 8px; flex: 1; min-width: 260px; }
+    .ferramentas input[type="search"] {
+      flex: 1; border: 1px solid var(--borda-forte); border-radius: 8px; padding: 9px 12px;
+      font: inherit; background: #fff; color: var(--texto);
+    }
+    .ferramentas input[type="search"]:focus { outline: 2px solid var(--primaria); outline-offset: 0; border-color: transparent; }
+    .btn {
+      background: var(--primaria); color: #fff; border: none; border-radius: 8px;
+      padding: 9px 16px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; white-space: nowrap;
+    }
+    .btn:hover { background: var(--primaria-escura); }
+    .btn-secundario { background: transparent; color: var(--primaria); border: 1px solid var(--borda-forte); }
+    .btn-secundario:hover { background: var(--primaria-clara); }
+    .abas { display: flex; gap: 6px; }
+    .aba { text-decoration: none; color: var(--texto-2); padding: 7px 12px; border-radius: 8px; font-size: 14px; }
+    .aba:hover { background: #f3f4f6; }
+    .aba.ativa { background: var(--primaria-clara); color: var(--link); font-weight: 600; }
+    .aba .contador { font-variant-numeric: tabular-nums; margin-left: 4px; color: var(--texto-3); }
+    .aba.ativa .contador { color: var(--primaria); }
+
+    /* Tabela */
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--borda); vertical-align: middle; }
+    th { font-size: 12px; font-weight: 600; color: var(--texto-3); text-transform: uppercase; letter-spacing: 0.4px; background: #fafafa; }
+    tbody tr:hover { background: #fafbfc; }
+    tbody tr:last-child td { border-bottom: none; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .produto .nome { font-weight: 600; color: var(--texto); }
+    .produto .detalhe { font-size: 13px; color: var(--texto-3); }
+    .sku { font-family: ui-monospace, Consolas, monospace; font-size: 13px; color: var(--texto-2); }
+    .qtd { font-weight: 600; }
+    .qtd small { display: block; font-weight: 400; font-size: 12px; color: var(--texto-3); }
+    .barra-nivel { height: 6px; background: #eef0f3; border-radius: 999px; overflow: hidden; margin-top: 6px; min-width: 90px; }
+    .barra-nivel span { display: block; height: 100%; background: var(--primaria); border-radius: 999px; }
+    .barra-nivel span.alerta { background: var(--alerta); }
+    .status { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .status.ok { background: var(--ok-fundo); color: var(--ok); }
+    .status.alerta { background: var(--alerta-fundo); color: var(--alerta); }
+    tr.destaque td { background: var(--alerta-fundo); }
+    tr.destaque:hover td { background: var(--alerta-fundo); }
+    :root[data-theme="dark"] tbody tr:hover,
+    :root:not([data-theme="light"]) tbody tr:hover { background: rgba(148, 163, 184, 0.06); }
+    .vazio { text-align: center; color: var(--texto-3); padding: 40px 16px; }
+
+    /* Rodapé da tabela e paginação */
+    .rodape-tabela { padding: 12px 16px; font-size: 13px; color: var(--texto-3); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-top: 1px solid var(--borda); }
+    .paginacao { display: flex; gap: 8px; align-items: center; }
+    .paginacao a, .paginacao span {
+      padding: 6px 12px; border-radius: 8px; border: 1px solid var(--borda-forte); text-decoration: none; color: var(--texto-2); font-size: 13px;
+    }
+    .paginacao a:hover { background: var(--primaria-clara); color: var(--primaria); }
+    .paginacao span.desativado { opacity: 0.45; }
+
+    /* Painel lateral */
+    .lateral .cartao { padding: 18px; }
+    .lateral h2 { font-size: 15px; font-weight: 700; margin: 0 0 4px; }
+    .lateral .subtitulo { font-size: 13px; color: var(--texto-3); margin-bottom: 14px; }
+    .item-lateral { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--borda); }
+    .item-lateral .nome { font-weight: 600; font-size: 14px; }
+    .item-lateral .detalhe { font-size: 12px; color: var(--texto-3); }
+    .vazio-lateral { font-size: 14px; color: var(--texto-3); padding: 8px 0; }
+    .link-lateral { display: block; margin-top: 14px; font-size: 14px; color: var(--link); font-weight: 600; text-decoration: none; }
+
+    .rodape { color: var(--texto-3); font-size: 12px; padding: 28px 0 40px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .selos { display: inline-flex; gap: 8px; }
+    .selo {
+      background: var(--primaria-clara); color: var(--link); font-weight: 700; font-size: 12px;
+      padding: 5px 12px; border-radius: 999px; border: 1px solid var(--borda);
+    }
+
+    /* Telas médias */
+    @media (max-width: 1040px) {
+      .corpo { grid-template-columns: 1fr; }
+      .lateral { order: 2; }
+      .tabela-wrap { overflow-x: auto; }
+      table { min-width: 720px; }
+    }
+    /* Celular */
+    @media (max-width: 640px) {
+      .pagina { padding: 0 14px; }
+      .nav a:not(.usuario-sair) { display: none; }
+      .usuario-nome { display: none; }
+      .indicador { min-width: calc(50% - 6px); }
+    }
+  </style>
+</head>
+<body>
+  <header class="barra">
+    <div class="pagina">
+      <div class="logo">Estoque</div>
+      <nav class="nav">
+        <a class="ativa" href="{% url 'home' %}">Produtos</a>
+        <a href="{% url 'admin:index' %}">Administração</a>
+        <div class="usuario" title="Usuário conectado">
+          <span class="avatar">{{ user.get_username|slice:":1"|upper }}</span>
+          <span class="usuario-nome">{{ user.get_username }}</span>
+          <a class="usuario-sair" href="{% url 'admin:logout' %}">Sair</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <div class="pagina">
+    <div class="cabecalho">
+      <div>
+        <div class="relogio">
+          <span class="relogio-data">{% now "l, j \d\e F \d\e Y" as data_atual %}{{ data_atual|capfirst }}</span>
+          <span class="relogio-hora">{% now "H:i:s" %}</span>
+        </div>
+        <h1>Controle de estoque</h1>
+      </div>
+      <div class="resumo-topo">
+        <div class="indicador">
+          <div class="valor">{{ total_geral }}</div>
+          <div class="rotulo">Produtos</div>
+        </div>
+        <div class="indicador">
+          <div class="valor">{{ unidades_geral }}</div>
+          <div class="rotulo">Unidades</div>
+        </div>
+        <div class="indicador {% if low_stock_count %}alerta{% endif %}">
+          <div class="valor">{{ low_stock_count }}</div>
+          <div class="rotulo">Para repor</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="corpo">
+      <section class="cartao">
+        <div class="ferramentas">
+          <form method="get">
+            <input type="search" name="q" value="{{ query }}" placeholder="Buscar por nome ou SKU" aria-label="Buscar produtos">
+            {% if only_low %}<input type="hidden" name="baixo" value="1">{% endif %}
+            <button class="btn" type="submit">Buscar</button>
+            {% if query or only_low %}<a class="btn btn-secundario" href="{% url 'home' %}">Limpar</a>{% endif %}
+          </form>
+          <div class="abas">
+            <a class="aba {% if not only_low %}ativa{% endif %}" href="?{% if query %}q={{ query|urlencode }}{% endif %}">Todos <span class="contador">{{ total_geral }}</span></a>
+            <a class="aba {% if only_low %}ativa{% endif %}" href="?baixo=1{% if query %}&q={{ query|urlencode }}{% endif %}">Para repor <span class="contador">{{ low_stock_count }}</span></a>
+          </div>
+        </div>
+
+        <div class="tabela-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>SKU</th>
+                <th class="num">Quantidade</th>
+                <th class="num">Preço</th>
+                <th>Situação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for product in products %}
+                <tr class="{% if product.is_low_stock %}destaque{% endif %}">
+                  <td class="produto">
+                    <div class="nome">{{ product.name }}</div>
+                    <div class="detalhe">{{ product.category|default:"Sem categoria" }} · {{ product.supplier|default:"sem fornecedor" }}</div>
+                  </td>
+                  <td class="sku">{{ product.sku }}</td>
+                  <td class="num qtd">
+                    {{ product.quantity }} <small>mínimo {{ product.minimum_stock }}</small>
+                    <div class="barra-nivel" title="{{ product.quantity }} de {{ product.minimum_stock }} (mínimo)">
+                      <span class="{% if product.is_low_stock %}alerta{% endif %}" style="width: {{ product.fill_percent }}%"></span>
+                    </div>
+                  </td>
+                  <td class="num">R$ {{ product.unit_price }}</td>
+                  <td>
+                    {% if product.is_low_stock %}
+                      <span class="status alerta">Repor</span>
+                    {% else %}
+                      <span class="status ok">Em dia</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="vazio">Nenhum produto encontrado{% if query %} para "{{ query }}"{% endif %}.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        {% if total_filtrado %}
+          <div class="rodape-tabela">
+            <span>{{ total_filtrado }} produto(s) · {{ unidades_filtrado }} unidade(s) no resultado</span>
+            {% if pagina.paginator.num_pages > 1 %}
+              <nav class="paginacao" aria-label="Paginação">
+                {% if pagina.has_previous %}
+                  <a href="?{% if parametros_filtro %}{{ parametros_filtro }}&{% endif %}page={{ pagina.previous_page_number }}">Anterior</a>
+                {% else %}
+                  <span class="desativado">Anterior</span>
+                {% endif %}
+                <span>Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+                {% if pagina.has_next %}
+                  <a href="?{% if parametros_filtro %}{{ parametros_filtro }}&{% endif %}page={{ pagina.next_page_number }}">Próxima</a>
+                {% else %}
+                  <span class="desativado">Próxima</span>
+                {% endif %}
+              </nav>
+            {% endif %}
+          </div>
+        {% endif %}
+      </section>
+
+      <aside class="lateral">
+        <div class="cartao">
+          <h2>Para repor</h2>
+          <div class="subtitulo">{{ low_stock_count }} produto(s) abaixo do estoque mínimo</div>
+          {% for product in low_stock %}
+            <div class="item-lateral">
+              <div>
+                <div class="nome">{{ product.name }}</div>
+                <div class="detalhe">{{ product.quantity }} em estoque · mínimo {{ product.minimum_stock }}</div>
+              </div>
+              <span class="sku">{{ product.sku }}</span>
+            </div>
+          {% empty %}
+            <div class="vazio-lateral">Nenhum produto precisa de reposição.</div>
+          {% endfor %}
+          {% if low_stock_count %}
+            <a class="link-lateral" href="?baixo=1">Ver todos os itens para repor</a>
+          {% endif %}
+        </div>
+      </aside>
+    </div>
+
+    <footer class="rodape">
+      <span>Movimentações são registradas e não podem ser editadas.</span>
+      <span class="selos">
+        <span class="selo">Django</span>
+        <span class="selo">PostgreSQL</span>
+      </span>
+    </footer>
+  </div>
+</body>
+</html>

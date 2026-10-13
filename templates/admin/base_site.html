@@ -1,0 +1,39 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} · Estoque{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'css/admin-estoque.css' %}">
+{% endblock %}
+
+{% block branding %}
+  <div class="marca-admin">
+    <span class="marca-admin-nome">Estoque</span>
+    <span class="marca-admin-sub">Administração</span>
+  </div>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block footer %}
+  {{ block.super }}
+  <script>
+    // Remove o modo claro do botão de tema: ele passa a alternar só entre
+    // automático (meio a meio) e escuro. O modo claro vira escuro ou automático.
+    document.addEventListener("click", function (event) {
+      if (!event.target.closest(".theme-toggle")) return;
+      if (localStorage.getItem("theme") !== "light") return;
+      var prefereEscuro = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      var novo = prefereEscuro ? "dark" : "auto";
+      localStorage.setItem("theme", novo);
+      document.documentElement.dataset.theme = novo;
+    });
+    if (localStorage.getItem("theme") === "light") {
+      var escuro = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      localStorage.setItem("theme", escuro ? "dark" : "auto");
+      document.documentElement.dataset.theme = escuro ? "dark" : "auto";
+    }
+  </script>
+{% endblock %}

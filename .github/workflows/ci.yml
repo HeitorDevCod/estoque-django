@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: estoque
+          POSTGRES_USER: estoque
+          POSTGRES_PASSWORD: estoque
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U estoque"
+          --health-interval 5s
+          --health-retries 10
+
+    env:
+      POSTGRES_HOST: localhost
+      DJANGO_DEBUG: "0"
+      DJANGO_SECRET_KEY: ci-only-key
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Testes
+        run: pytest
+
+      - name: Verificar migrations pendentes
+        run: python manage.py makemigrations --check --dry-run
