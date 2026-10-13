@@ -58,6 +58,22 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
+## Dados de demonstração
+
+Para ver o sistema com produtos, rode o comando abaixo depois de aplicar as migrações:
+
+```bash
+python manage.py seed_demo
+```
+
+Com Docker:
+
+```bash
+docker compose exec web python manage.py seed_demo
+```
+
+O comando cria fornecedores, categorias e cinco produtos de exemplo. Ele pode ser rodado mais de uma vez sem duplicar nada, porque pula os SKUs que já existem. Só funciona com `DJANGO_DEBUG=1`.
+
 ## Variáveis de ambiente
 
 | Variável | Padrão | Função |
